@@ -1,0 +1,114 @@
+-- CÂU 1 --
+CREATE DATABASE QLHANG
+GO
+USE QLHANG
+GO
+
+CREATE TABLE VATTU(
+    MAVT nvarchar(10) PRIMARY KEY, 
+    TENVT nvarchar(50),
+    DVTINH nvarchar(50),
+    SLCON INT
+);
+
+CREATE TABLE HDBAN(
+    MAHD nvarchar(10) PRIMARY KEY, 
+    NGAYXUAT smalldatetime,
+    HOTENKHACH nvarchar(50)
+);
+
+CREATE TABLE HANGXUAT(
+    MAHD nvarchar(10),
+    MAVT nvarchar(10),
+    DONGIA INT,
+    SLBAN INT,
+    CONSTRAINT HANGXUAT_PK PRIMARY KEY (MAHD, MAVT)
+);
+
+ALTER TABLE HANGXUAT ADD CONSTRAINT FK_HANGXUAT_HDBAN
+FOREIGN KEY (MAHD) REFERENCES HDBAN (MAHD);
+ALTER TABLE HANGXUAT ADD CONSTRAINT FK_HANGXUAT_VATTU
+FOREIGN KEY (MAVT) REFERENCES VATTU (MAVT);
+
+INSERT INTO VATTU VALUES
+('VT01', N'Gạch',N'Viên', 100000),
+('VT02', N'Xi-Măng', N'Bao', 80000);
+
+INSERT INTO HDBAN VALUES
+('HD01', '2022-12-12', N'Trần Hồng Mai'),
+('HD02', '2022-11-11', N'Huỳnh Ngọc Hào');
+
+INSERT INTO HANGXUAT VALUES
+('HD01', 'VT01', 70000, 200),
+('HD02', 'VT02', 35000, 50),
+('HD02', 'VT01', 72000, 100),
+('HD01', 'VT02', 38000, 80);
+
+
+-- CÂU 2 --
+SELECT TOP 1
+MAHD, SUM(SLBAN * DONGIA) AS N'Tổng Tiền'
+FROM HANGXUAT
+GROUP BY MAHD
+ORDER BY SUM(SLBAN * DONGIA) Desc;
+
+-- CÂU 3 --
+CREATE FUNCTION getThu(@ngay datetime)
+	RETURNS NVARCHAR(100)
+AS
+BEGIN
+	DECLARE @songaytrongtuan int;
+	set @songaytrongtuan = DATEPART (WEEKDAY,@ngay);
+	DECLARE @thu NVARCHAR(100);
+	
+	if (@songaytrongtuan = 0)
+	BEGIN
+		SET @thu = N'Thứ hai';
+	END
+	if (@songaytrongtuan = 0)
+	BEGIN
+		SET @thu = N'Thứ ba';
+	END
+	if (@songaytrongtuan = 0)
+	BEGIN
+		SET @thu = N'Thứ tư';
+	END
+	if (@songaytrongtuan = 0)
+	BEGIN
+		SET @thu = N'Thứ năm';
+	END
+	if (@songaytrongtuan = 0)
+	BEGIN
+		SET @thu = N'Thứ sáu';
+	END
+	if (@songaytrongtuan = 0)
+	BEGIN
+		SET @thu = N'Thứ bảy';
+	END
+	if (@songaytrongtuan = 0)
+	BEGIN
+		SET @thu = N'Chủ nhật';
+	END
+	RETURN @thu;
+end
+CREATE FUNCTION ham (
+    @MAHD nvarchar(10)
+)
+RETURNS TABLE
+AS
+RETURN
+    SELECT 
+        dbo.HDBAN.MAHD,NGAYXUAT,MAVT,DONGIA,SLBAN, dbo.getThu(NgayXuat) as 'Ngay Thu' 
+    FROM dbo.HANGXUAT,dbo.HDBAN
+    WHERE dbo.HDBAN.MAHD=dbo.HANGXUAT.MAHD AND dbo.HANGXUAT.MAHD = @MAHD
+
+select*from dbo.ham (2)
+-- CÂU 4 --
+CREATE PROCEDURE tongtienvattu 
+@thang int, @nam int 
+AS
+	SELECT 
+	SUM(SLBAN * DONGIA)
+	FROM HANGXUAT HX
+	INNER JOIN HDBAN HD ON HX.MAHD = HD.MAHD
+	WHERE MONTH(HD.NGAYXUAT) = @thang AND YEAR(HD.NGAYXUAT) = @nam;
